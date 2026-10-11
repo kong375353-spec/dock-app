@@ -1,0 +1,872 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#16202a">
+</head>
+<body>
+<title>月台助手</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+:root {
+  --ground: #e9ecef;
+  --surface: #ffffff;
+  --surface-2: #f4f6f8;
+  --line: #d5dbe1;
+  --ink: #16202a;
+  --muted: #5b6875;
+  --faint: #8995a1;
+  --go: #1c8c52;
+  --go-soft: #dcf2e5;
+  --warn: #c98a00;
+  --warn-soft: #fbefcc;
+  --stop: #cf3f33;
+  --stop-soft: #fbe1de;
+  --hazard: #f0b400;
+  --btn: #16202a;
+  --btn-ink: #ffffff;
+  --shadow: 0 1px 2px rgba(22, 32, 42, .06), 0 4px 14px rgba(22, 32, 42, .06);
+  --num: "Barlow Condensed", "Arial Narrow", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --text: "Barlow", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground: #0e141a;
+    --surface: #17202a;
+    --surface-2: #1e2934;
+    --line: #2b3845;
+    --ink: #e6ecf1;
+    --muted: #9aa8b5;
+    --faint: #6f7d8a;
+    --go: #3cc37c;
+    --go-soft: #173828;
+    --warn: #f0b429;
+    --warn-soft: #3a3016;
+    --stop: #f0645a;
+    --stop-soft: #43211f;
+    --hazard: #f0b400;
+    --btn: #e6ecf1;
+    --btn-ink: #0e141a;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #0e141a;
+  --surface: #17202a;
+  --surface-2: #1e2934;
+  --line: #2b3845;
+  --ink: #e6ecf1;
+  --muted: #9aa8b5;
+  --faint: #6f7d8a;
+  --go: #3cc37c;
+  --go-soft: #173828;
+  --warn: #f0b429;
+  --warn-soft: #3a3016;
+  --stop: #f0645a;
+  --stop-soft: #43211f;
+  --hazard: #f0b400;
+  --btn: #e6ecf1;
+  --btn-ink: #0e141a;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--text);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-inline: 16px;
+  padding-block: 0 32px;
+}
+.wrap { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+.wrap .wrap { width: 100%; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--hazard); outline-offset: 2px; }
+
+/* 顶栏 */
+.top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: var(--ground);
+  padding-block: 12px 8px;
+  display: flex; align-items: center; gap: 10px;
+}
+.brand { display: flex; flex-direction: column; line-height: 1.15; margin-right: auto; }
+.brand b { font-family: var(--num); font-size: 26px; font-weight: 700; letter-spacing: .02em; }
+.brand span { font-size: 12px; color: var(--muted); }
+.conn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--muted);
+  padding: 4px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line);
+  white-space: nowrap;
+}
+.conn i { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); }
+.conn[data-s="demo"] i { background: var(--warn); }
+.conn[data-s="on"] i { background: var(--go); }
+.btn-sm {
+  border: 0; border-radius: 10px; padding: 8px 12px; font-size: 13px; font-weight: 600;
+  background: var(--btn); color: var(--btn-ink); white-space: nowrap;
+}
+.note {
+  font-size: 12.5px; color: var(--muted);
+  background: var(--warn-soft); border-radius: 10px; padding: 8px 12px;
+}
+.note[hidden] { display: none; }
+
+/* 阶段 */
+.steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.step { text-align: center; font-size: 12px; color: var(--faint); }
+.step::before {
+  content: ""; display: block; height: 5px; border-radius: 3px; background: var(--line); margin-bottom: 5px;
+}
+.step.done { color: var(--muted); }
+.step.done::before { background: var(--muted); }
+.step.now { color: var(--ink); font-weight: 600; }
+.step.now::before { background: var(--hazard); }
+
+/* 页签 */
+.tabs { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface-2); border-radius: 12px; padding: 4px; gap: 4px; border: 1px solid var(--line); }
+.tab { border: 0; background: transparent; border-radius: 9px; padding: 8px; font-weight: 600; color: var(--muted); }
+.tab[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+
+.card { background: var(--surface); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px; }
+.card h2 { margin: 0; font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: .06em; }
+.row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+
+/* 距离 */
+.dist { display: flex; align-items: baseline; gap: 6px; }
+.dist b { font-family: var(--num); font-size: 76px; font-weight: 700; line-height: .9; font-variant-numeric: tabular-nums; }
+.dist span { font-family: var(--num); font-size: 22px; color: var(--muted); font-weight: 600; }
+.zone { font-size: 13px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
+.zone[data-z="far"] { background: var(--go-soft); color: var(--go); }
+.zone[data-z="mid"], .zone[data-z="near"] { background: var(--warn-soft); color: var(--warn); }
+.zone[data-z="dock"] { background: var(--stop-soft); color: var(--stop); }
+
+.track { position: relative; height: 64px; overflow: hidden; }
+.lane {
+  position: absolute; left: 0; right: 18px; bottom: 8px; height: 8px; border-radius: 4px 0 0 4px;
+  background: linear-gradient(90deg,
+    var(--go) 0 40%, var(--warn) 40% 75%, var(--warn) 75% 92%, var(--stop) 92% 100%);
+  opacity: .85;
+}
+.dockwall {
+  position: absolute; right: 0; top: 0; bottom: 0; width: 18px; border-radius: 3px;
+  background: repeating-linear-gradient(135deg, var(--hazard) 0 7px, #16202a 7px 14px);
+}
+.truck { position: absolute; bottom: 12px; left: 0; width: 64px; height: 34px; transition: left .25s linear; }
+.truck svg { width: 100%; height: 100%; display: block; }
+.ticks { position: relative; height: 16px; margin-right: 18px; font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
+.ticks span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+.ticks span:first-child { transform: none; }
+.scale-note { font-size: 11px; color: var(--faint); margin: 2px 0 0; }
+
+/* 信号灯 */
+.signal { display: flex; align-items: center; gap: 14px; }
+.lamps { display: flex; flex-direction: column; gap: 6px; background: #16202a; padding: 7px; border-radius: 12px; }
+.lamp { width: 26px; height: 26px; border-radius: 50%; background: #2e3a46; }
+.lamp.red.on { background: #ff5446; box-shadow: 0 0 14px #ff5446; }
+.lamp.green.on { background: #36d17f; box-shadow: 0 0 14px #36d17f; }
+.signal-text b { display: block; font-size: 20px; }
+.signal-text span { color: var(--muted); font-size: 13.5px; }
+
+/* 表单 */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 13px; color: var(--muted); }
+.input-row { display: flex; gap: 8px; }
+.input-row input {
+  flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--surface-2);
+  border-radius: 12px; padding: 12px 14px; font-family: var(--num); font-size: 24px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.input-row em { font-style: normal; align-self: center; color: var(--muted); font-weight: 600; }
+.btn {
+  border: 0; border-radius: 14px; padding: 14px 16px; font-weight: 600; font-size: 16px;
+  background: var(--btn); color: var(--btn-ink); position: relative; overflow: hidden;
+}
+.btn:disabled { opacity: .35; cursor: not-allowed; }
+.btn.ghost { background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); }
+.hint { font-size: 12.5px; color: var(--muted); margin: 0; }
+
+.release {
+  border-radius: 16px; padding: 18px; background: var(--go); color: #fff;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.release b { font-family: var(--num); font-size: 34px; letter-spacing: .03em; }
+.release[hidden] { display: none; }
+
+/* 仓管 */
+.summary { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 8px; }
+.summary div { display: flex; flex-direction: column; }
+.summary small { color: var(--muted); font-size: 12px; }
+.summary b { font-family: var(--num); font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+
+.checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.checks li { display: flex; align-items: center; gap: 10px; font-size: 14.5px; }
+.mark {
+  flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 14px; font-weight: 700; background: var(--surface-2); color: var(--faint);
+}
+.checks li[data-ok="1"] .mark { background: var(--go-soft); color: var(--go); }
+.checks li[data-ok="0"] .mark { background: var(--stop-soft); color: var(--stop); }
+.checks li span.why { margin-left: auto; color: var(--muted); font-size: 12.5px; text-align: right; }
+
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tile { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; border-left: 4px solid var(--line); }
+.tile small { color: var(--muted); font-size: 12px; }
+.tile b { font-family: var(--num); font-size: 28px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.tile span { font-size: 12.5px; color: var(--muted); }
+.tile[data-s="ok"] { border-left-color: var(--go); }
+.tile[data-s="bad"] { border-left-color: var(--stop); }
+.tile[data-s="bad"] b { color: var(--stop); }
+
+.wbar { position: relative; height: 16px; border-radius: 8px; background: var(--surface-2); overflow: hidden; }
+.wbar .band { position: absolute; top: 0; bottom: 0; background: var(--go-soft); }
+.wbar .fill { position: absolute; left: 0; top: 4px; bottom: 4px; border-radius: 4px; background: var(--muted); transition: width .3s; }
+.wbar .target { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--ink); }
+.wnums { display: flex; justify-content: space-between; gap: 8px; font-variant-numeric: tabular-nums; }
+.wnums b { font-family: var(--num); font-size: 24px; }
+.wnums small { display: block; color: var(--muted); font-size: 12px; }
+.wstate { font-weight: 600; font-size: 13.5px; }
+.wstate[data-s="ok"] { color: var(--go); }
+.wstate[data-s="bad"] { color: var(--stop); }
+
+.controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.controls .wide { grid-column: 1 / -1; }
+.hold .prog { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: rgba(240, 180, 0, .45); }
+
+.timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.timeline li { display: grid; grid-template-columns: 64px 1fr; gap: 8px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 13.5px; }
+.timeline li:first-child { border-top: 0; }
+.timeline time { color: var(--faint); font-variant-numeric: tabular-nums; font-size: 12.5px; }
+.timeline li[data-lv="bad"] span { color: var(--stop); }
+.timeline li[data-lv="ok"] span { color: var(--go); }
+.empty { color: var(--faint); font-size: 13px; margin: 0; }
+
+.recs { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.recs th { text-align: left; color: var(--muted); font-weight: 500; font-size: 12px; padding: 4px 6px 4px 0; }
+.recs td { padding: 6px 6px 6px 0; border-top: 1px solid var(--line); }
+.tbl { overflow-x: auto; }
+
+details summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+.raw { margin: 8px 0 0; max-height: 180px; overflow: auto; font: 12px/1.45 ui-monospace, Consolas, monospace; color: var(--muted); background: var(--surface-2); border-radius: 10px; padding: 8px 10px; white-space: pre; }
+
+[hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) { .truck, .wbar .fill { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><b>月台助手</b><span>1 号卸货月台</span></div>
+    <span class="conn" id="conn" data-s="demo"><i></i><span id="connText">演示中</span></span>
+    <button class="btn-sm" id="btnConn" type="button">连接蓝牙</button>
+  </header>
+
+  <p class="note" id="note">现在显示的是演示数据：模拟一辆车从倒车、锁定、卸货到放行的完整过程。连接月台的 HC-08 蓝牙后显示真实数据。</p>
+
+  <div class="steps" id="steps" aria-label="作业阶段">
+    <div class="step">待机</div><div class="step">引导停靠</div><div class="step">锁定卸货</div><div class="step">放行检查</div><div class="step">放行</div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tabDriver" aria-selected="true" type="button">司机</button>
+    <button class="tab" role="tab" id="tabKeeper" aria-selected="false" type="button">仓管员</button>
+  </div>
+
+  <!-- 司机页 -->
+  <section id="pageDriver" class="wrap" style="gap:12px">
+    <div class="release" id="release" hidden>
+      <b>可以驶离</b>
+      <span>检查全部通过，止轮器已抬起。请缓慢驶离月台。</span>
+    </div>
+
+    <div class="card">
+      <div class="row"><h2>车尾距月台</h2><span class="zone" id="zone" data-z="none">等待车辆</span></div>
+      <div class="dist"><b id="distNum">--</b><span>cm</span></div>
+      <div>
+        <div class="track" aria-hidden="true">
+          <div class="lane"></div>
+          <div class="truck" id="truck">
+            <svg viewBox="0 0 64 34"><rect x="18" y="2" width="44" height="24" rx="2" fill="#3d5a73"/><rect x="2" y="10" width="17" height="16" rx="3" fill="#2b4256"/><rect x="5" y="13" width="9" height="6" rx="1" fill="#a9c7de"/><circle cx="12" cy="28" r="5" fill="#16202a"/><circle cx="50" cy="28" r="5" fill="#16202a"/><circle cx="12" cy="28" r="2" fill="#8a97a3"/><circle cx="50" cy="28" r="2" fill="#8a97a3"/><rect x="58" y="4" width="4" height="20" fill="#ff5446"/></svg>
+          </div>
+          <div class="dockwall"></div>
+        </div>
+        <div class="ticks"><span style="left:0">100</span><span style="left:40%">60</span><span style="left:75%">25</span><span style="left:92%">8</span></div>
+        <p class="scale-note">单位 cm。绿色远，黄色中和近，红色是到位区（8 cm 以内）。</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>月台信号</h2>
+      <div class="signal">
+        <div class="lamps"><div class="lamp red" id="lampRed"></div><div class="lamp green" id="lampGreen"></div></div>
+        <div class="signal-text"><b id="sigTitle">绿灯</b><span id="sigText">月台空闲</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>停车确认</h2>
+      <div class="field">
+        <label for="billKg">运单重量</label>
+        <div class="input-row"><input id="billKg" type="number" inputmode="decimal" min="0" step="0.1" value="12.0"><em>kg</em></div>
+      </div>
+      <button class="btn" id="btnPark" type="button">确认停车并发送运单</button>
+      <p class="hint" id="parkHint">车倒到位（红灯）后才能确认。</p>
+    </div>
+  </section>
+
+  <!-- 仓管页 -->
+  <section id="pageKeeper" class="wrap" style="gap:12px" hidden>
+    <div class="card">
+      <div class="summary">
+        <div><small>当前阶段</small><b id="kStage">待机</b></div>
+        <div><small>装卸计时</small><b id="kTime">00:00</b></div>
+        <div><small>车次</small><b id="kTruck">#0</b></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>放行条件（四项都满足才能放行）</h2>
+      <ul class="checks">
+        <li id="c1"><span class="mark">1</span>仓管员确认装卸完成<span class="why"></span></li>
+        <li id="c2"><span class="mark">2</span>车厢内和月台边缘无人<span class="why"></span></li>
+        <li id="c3"><span class="mark">3</span>车辆没有位移<span class="why"></span></li>
+        <li id="c4"><span class="mark">4</span>卸货重量与运单相符<span class="why"></span></li>
+      </ul>
+    </div>
+
+    <div class="tiles">
+      <div class="tile" id="tPeople"><small>车厢内人数</small><b id="vPeople">0</b><span id="sPeople">无人</span></div>
+      <div class="tile" id="tEdge"><small>月台边缘</small><b id="vEdge">无人</b><span>人体红外</span></div>
+      <div class="tile" id="tDrift"><small>车辆位移</small><b id="vDrift">0</b><span id="sDrift">mm，超过 20 mm 报警</span></div>
+      <div class="tile" id="tDist"><small>测距</small><b id="vDist">--</b><span id="sDist">cm</span></div>
+    </div>
+
+    <div class="card">
+      <div class="row"><h2>卸货重量核对</h2><span class="wstate" id="wState">未开始</span></div>
+      <div class="wnums">
+        <div><small>已卸</small><b id="wNow">0.00</b> kg</div>
+        <div style="text-align:center"><small>差值</small><b id="wDiff">0.00</b> kg</div>
+        <div style="text-align:right"><small>运单</small><b id="wBill">0.00</b> kg</div>
+      </div>
+      <div class="wbar" aria-hidden="true"><div class="band" id="wBand"></div><div class="fill" id="wFill"></div><div class="target" id="wTarget"></div></div>
+      <p class="hint">绿色区域是允许的偏差：运单重量的 5%，至少 50 克。</p>
+    </div>
+
+    <div class="card">
+      <h2>月台操作</h2>
+      <div class="controls">
+        <button class="btn" id="btnLock" type="button">锁定车辆</button>
+        <button class="btn" id="btnDone" type="button">装卸完成</button>
+        <button class="btn ghost hold wide" id="btnReview" type="button"><span class="prog" id="reviewProg"></span><span style="position:relative">按住 1.5 秒：复核放行</span></button>
+      </div>
+      <p class="hint">和月台上的三个按键作用相同。复核放行只在重量不符时需要。</p>
+    </div>
+
+    <div class="card">
+      <h2>告警与事件</h2>
+      <ul class="timeline" id="timeline"></ul>
+      <p class="empty" id="tlEmpty">还没有事件。</p>
+    </div>
+
+    <div class="card">
+      <h2>今日作业记录</h2>
+      <div class="tbl">
+        <table class="recs">
+          <thead><tr><th>车次</th><th>装卸时长</th><th>人员进/出</th><th>重量差</th><th>异常</th></tr></thead>
+          <tbody id="recs"></tbody>
+        </table>
+      </div>
+      <p class="empty" id="recEmpty">还没有完成的作业。</p>
+      <details>
+        <summary>通信记录（调试用）</summary>
+        <pre class="raw" id="raw"></pre>
+      </details>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- 和单片机 config.h 保持一致的参数 ---------- */
+  var CFG = { detect: 1000, far: 600, near: 250, dock: 80, driftAlarm: 20, driftClear: 12, tolPct: 5, tolMin: 50, leaveMs: 3000 };
+  var STAGE = ["待机", "引导停靠", "锁定卸货", "放行检查", "放行"];
+  var AL = { DRIFT: 1, PEOPLE: 2, EDGE: 4, WEIGHT: 8, NOREAD: 16 };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ---------- 状态 ---------- */
+  var S = { stage: 0, dist: null, people: 0, edge: 0, weight: 0, bill: 0, drift: 0, elapsed: 0, alarm: 0, truck: 0 };
+  var doneConfirmed = false;   // 本车已按过"装卸完成"
+  var mode = "demo";           // demo | ble
+  var ble = { device: null, ch: null, buf: "" };
+
+  function fmtKg(g) { return (g / 1000).toFixed(2); }
+  function fmtTime(s) { var m = Math.floor(s / 60), r = s % 60; return (m < 10 ? "0" : "") + m + ":" + (r < 10 ? "0" : "") + r; }
+  function clock() { var d = new Date(); return d.toTimeString().slice(0, 8); }
+  function tol(bill) { return Math.max(Math.round(bill * CFG.tolPct / 100), CFG.tolMin); }
+  function zoneOf(d) {
+    if (d == null) return "none";
+    if (d <= CFG.dock) return "dock";
+    if (d <= CFG.near) return "near";
+    if (d <= CFG.far) return "mid";
+    return "far";
+  }
+
+  /* ---------- 通信记录 ---------- */
+  var rawLines = [];
+  function logRaw(dir, line) {
+    rawLines.push((dir === "in" ? "← " : "→ ") + line);
+    if (rawLines.length > 60) rawLines.shift();
+    var el = $("raw");
+    if (el && el.parentNode.open) el.textContent = rawLines.join("\n");
+  }
+
+  /* ---------- 协议解析：和 firmware/User/protocol.h 一致 ---------- */
+  function handleLine(line) {
+    line = line.trim();
+    if (!line) return;
+    if (!(mode === "demo" && line.charAt(0) === "S")) logRaw("in", line);
+    var p = line.split(",");
+    if (p[0] === "S" && p.length >= 11) {
+      var prev = S.stage;
+      var d = +p[2];
+      S.stage = +p[1]; S.dist = d === 65535 ? null : d; S.people = +p[3]; S.edge = +p[4];
+      S.weight = +p[5]; S.bill = +p[6]; S.drift = +p[7]; S.elapsed = +p[8]; S.alarm = +p[9]; S.truck = +p[10];
+      if (S.stage < 2 || (prev === 4 && S.stage !== 4)) doneConfirmed = false;
+      render();
+    } else if (p[0] === "E") {
+      addEvent(+p[1], +p[2]);
+    } else if (p[0] === "R" && p.length >= 7) {
+      addRecord({ no: +p[1], dur: +p[2], inn: +p[3], out: +p[4], diff: +p[5], an: +p[6] });
+    }
+  }
+
+  var CMD_NAME = { 1: "确认停车", 2: "锁定", 3: "装卸完成", 4: "复核放行" };
+  function reasonText(r) {
+    var t = [];
+    if (r & AL.PEOPLE) t.push("车厢内有人");
+    if (r & AL.EDGE) t.push("月台边缘有人");
+    if (r & AL.DRIFT) t.push("车辆有位移");
+    if (r & AL.NOREAD) t.push("测距读不到");
+    return t.join("、");
+  }
+  function eventText(code, arg) {
+    switch (code) {
+      case -1: return ["命令发送失败，检查蓝牙连接", "bad"];
+      case -2: return ["蓝牙连接已断开", "bad"];
+      case 0: return ["设备已连接", "ok"];
+      case 1: return ["车辆进入月台，开始引导", ""];
+      case 2: return ["车辆到位，请停车", ""];
+      case 3: return ["司机确认停车，运单 " + fmtKg(arg) + " kg", "ok"];
+      case 4: return ["车辆已锁定，开始卸货", ""];
+      case 5: return ["车辆位移 " + arg + " mm，注意溜车", "bad"];
+      case 6: return ["车辆位移已恢复", "ok"];
+      case 7: return ["拒绝放行：" + reasonText(arg), "bad"];
+      case 8: return ["重量不符，差 " + (arg > 0 ? "+" : "") + fmtKg(arg) + " kg，请核实", "bad"];
+      case 9: return ["仓管员复核后放行", "ok"];
+      case 10: return ["检查通过，第 " + arg + " 车已放行", "ok"];
+      case 11: return ["车辆已离开月台", ""];
+      case 12: return ["未执行：" + (CMD_NAME[arg] || "命令") + "，当前阶段不允许", "bad"];
+      default: return ["事件 " + code, ""];
+    }
+  }
+
+  var events = [];
+  function addEvent(code, arg) {
+    var t = eventText(code, arg);
+    events.unshift({ time: clock(), text: t[0], lv: t[1] });
+    if (events.length > 30) events.pop();
+    var ul = $("timeline");
+    ul.innerHTML = "";
+    events.forEach(function (e) {
+      var li = document.createElement("li");
+      li.setAttribute("data-lv", e.lv);
+      var tm = document.createElement("time"); tm.textContent = e.time;
+      var sp = document.createElement("span"); sp.textContent = e.text;
+      li.appendChild(tm); li.appendChild(sp); ul.appendChild(li);
+    });
+    $("tlEmpty").hidden = events.length > 0;
+  }
+
+  var records = [];
+  function anomalyText(a) {
+    var t = [];
+    if (a & AL.DRIFT) t.push("溜车");
+    if (a & AL.WEIGHT) t.push("重量不符");
+    return t.length ? t.join("、") : "无";
+  }
+  function addRecord(r) {
+    records.unshift(r);
+    if (records.length > 20) records.pop();
+    var tb = $("recs");
+    tb.innerHTML = "";
+    records.forEach(function (x) {
+      var tr = document.createElement("tr");
+      [ "#" + x.no, fmtTime(x.dur), x.inn + " / " + x.out, (x.diff > 0 ? "+" : "") + fmtKg(x.diff) + " kg", anomalyText(x.an) ]
+        .forEach(function (v) { var td = document.createElement("td"); td.textContent = v; tr.appendChild(td); });
+      tb.appendChild(tr);
+    });
+    $("recEmpty").hidden = records.length > 0;
+  }
+
+  /* ---------- 画面刷新 ---------- */
+  function setCheck(id, ok, why) {
+    var li = $(id);
+    li.setAttribute("data-ok", ok == null ? "" : (ok ? "1" : "0"));
+    li.querySelector(".mark").textContent = ok == null ? li.id.slice(1) : (ok ? "✓" : "✕");
+    li.querySelector(".why").textContent = why || "";
+  }
+
+  function render() {
+    var st = S.stage;
+
+    // 阶段条
+    var steps = $("steps").children;
+    for (var i = 0; i < steps.length; i++) {
+      steps[i].className = "step" + (i < st ? " done" : "") + (i === st ? " now" : "");
+    }
+
+    // 司机：距离
+    var z = zoneOf(S.dist);
+    var zoneName = { none: "等待车辆", far: "远", mid: "中", near: "近，减速", dock: "已到位，停车" }[z];
+    $("zone").textContent = st === 0 && z === "none" ? "等待车辆" : zoneName;
+    $("zone").setAttribute("data-z", z);
+    $("distNum").textContent = S.dist == null ? "--" : Math.round(S.dist / 10);
+    var track = $("truck").parentNode;
+    // 车尾（卡车右端）对准刻度：刻度 0 在左端代表 100 cm，右端贴着月台代表 0
+    var laneW = Math.max(0, track.clientWidth - 18);
+    var frac = S.dist == null ? 0 : Math.max(0, Math.min(1, 1 - S.dist / CFG.detect));
+    $("truck").hidden = S.dist == null;
+    $("truck").style.left = Math.round(frac * laneW - 64) + "px";
+
+    // 司机：信号灯
+    var red = st === 2 || st === 3 || (st === 1 && z === "dock");
+    $("lampRed").classList.toggle("on", red);
+    $("lampGreen").classList.toggle("on", !red);
+    var sig = st === 0 ? ["绿灯", "月台空闲，可以倒车进入"]
+      : st === 1 ? (z === "dock" ? ["红灯", "已到位，请停车并确认"] : ["绿灯", "请按提示继续倒车"])
+      : st === 4 ? ["绿灯", "可以驶离"]
+      : ["红灯", "装卸中，禁止驶离"];
+    $("sigTitle").textContent = sig[0];
+    $("sigText").textContent = sig[1];
+    $("release").hidden = st !== 4;
+
+    // 司机：停车确认
+    var canPark = st === 1 && z === "dock";
+    $("btnPark").disabled = !canPark;
+    $("parkHint").textContent = st === 1 && !canPark ? "车倒到位（红灯）后才能确认。"
+      : canPark ? "确认后仓管员会锁定车辆。"
+      : st >= 2 ? "已确认，运单 " + fmtKg(S.bill) + " kg。" : "车辆进入月台后开始引导。";
+
+    // 仓管：概况
+    $("kStage").textContent = STAGE[st] || "--";
+    $("kTime").textContent = fmtTime(S.elapsed);
+    $("kTruck").textContent = "#" + (st >= 1 && st <= 3 ? S.truck + 1 : S.truck);
+
+    // 仓管：小卡片
+    var peopleBad = S.people > 0;
+    $("vPeople").textContent = S.people;
+    $("sPeople").textContent = peopleBad ? "有人，禁止放行" : "无人";
+    $("tPeople").setAttribute("data-s", peopleBad ? "bad" : "ok");
+    $("vEdge").textContent = S.edge ? "有人" : "无人";
+    $("tEdge").setAttribute("data-s", S.edge ? "bad" : "ok");
+    var driftBad = !!(S.alarm & AL.DRIFT);
+    $("vDrift").textContent = st === 2 || st === 3 ? S.drift : "--";
+    $("tDrift").setAttribute("data-s", st === 2 || st === 3 ? (driftBad ? "bad" : "ok") : "");
+    $("vDist").textContent = S.dist == null ? "--" : Math.round(S.dist / 10);
+    $("sDist").textContent = S.alarm & AL.NOREAD ? "读不到距离" : "cm";
+    $("tDist").setAttribute("data-s", S.alarm & AL.NOREAD ? "bad" : (S.dist == null ? "" : "ok"));
+
+    // 仓管：重量
+    var t = tol(S.bill), diff = S.weight - S.bill, active = st >= 2;
+    $("wNow").textContent = fmtKg(active ? S.weight : 0);
+    $("wBill").textContent = fmtKg(S.bill);
+    $("wDiff").textContent = active ? (diff > 0 ? "+" : "") + fmtKg(diff) : "0.00";
+    var scale = Math.max(S.bill + t, S.weight, 1) * 1.1;
+    $("wFill").style.width = (active ? Math.max(0, S.weight) / scale * 100 : 0) + "%";
+    $("wTarget").style.left = (S.bill / scale * 100) + "%";
+    $("wBand").style.left = (Math.max(0, S.bill - t) / scale * 100) + "%";
+    $("wBand").style.width = (2 * t / scale * 100) + "%";
+    var wOk = Math.abs(diff) <= t;
+    var ws = $("wState");
+    if (!active) { ws.textContent = "未开始"; ws.setAttribute("data-s", ""); }
+    else if (wOk) { ws.textContent = "相符"; ws.setAttribute("data-s", "ok"); }
+    else { ws.textContent = diff < 0 ? "偏少 " + fmtKg(-diff) + " kg" : "偏多 " + fmtKg(diff) + " kg"; ws.setAttribute("data-s", "bad"); }
+
+    // 仓管：放行条件
+    if (st < 2) {
+      setCheck("c1", null); setCheck("c2", null); setCheck("c3", null); setCheck("c4", null);
+    } else if (st === 4) {
+      setCheck("c1", true); setCheck("c2", true); setCheck("c3", true); setCheck("c4", true, "");
+    } else {
+      setCheck("c1", st === 3 || doneConfirmed, st === 3 || doneConfirmed ? "" : "等待确认");
+      var areaOk = S.people === 0 && !S.edge;
+      setCheck("c2", areaOk, areaOk ? "" : [S.people > 0 ? "车厢 " + S.people + " 人" : "", S.edge ? "边缘有人" : ""].filter(Boolean).join("，"));
+      var still = !(S.alarm & (AL.DRIFT | AL.NOREAD));
+      setCheck("c3", still, still ? "" : (S.alarm & AL.NOREAD ? "测距读不到" : "位移 " + S.drift + " mm"));
+      setCheck("c4", wOk, wOk ? "" : (diff < 0 ? "偏少" : "偏多") + " " + fmtKg(Math.abs(diff)) + " kg");
+    }
+
+    // 仓管：按钮
+    $("btnLock").disabled = st !== 1;
+    $("btnDone").disabled = !(st === 2 || st === 3);
+    $("btnReview").disabled = st !== 3;
+  }
+
+  /* ---------- 发送命令 ---------- */
+  function send(cmd) {
+    logRaw("out", cmd);
+    if (mode === "demo") { Sim.command(cmd); return; }
+    if (!ble.ch) return;
+    var data = new TextEncoder().encode(cmd + "\n");
+    var p = Promise.resolve();
+    for (var i = 0; i < data.length; i += 20) {
+      (function (chunk) {
+        p = p.then(function () {
+          return ble.ch.writeValueWithoutResponse ? ble.ch.writeValueWithoutResponse(chunk) : ble.ch.writeValue(chunk);
+        });
+      })(data.slice(i, i + 20));
+    }
+    p.catch(function (e) { addEvent(-1, 0); logRaw("out", "发送失败：" + e.message); });
+  }
+
+  $("btnPark").addEventListener("click", function () {
+    var kg = parseFloat($("billKg").value);
+    if (!(kg >= 0)) { $("parkHint").textContent = "请填写运单重量，单位千克。"; return; }
+    send("P," + Math.round(kg * 1000));
+  });
+  $("btnLock").addEventListener("click", function () { send("L"); });
+  $("btnDone").addEventListener("click", function () { doneConfirmed = true; send("D"); render(); });
+
+  // 按住复核
+  (function () {
+    var btn = $("btnReview"), prog = $("reviewProg"), timer = null, start = 0, raf = 0;
+    function stop() { clearTimeout(timer); cancelAnimationFrame(raf); timer = null; prog.style.width = "0"; }
+    function tick() { prog.style.width = Math.min(100, (Date.now() - start) / 15) + "%"; raf = requestAnimationFrame(tick); }
+    btn.addEventListener("pointerdown", function (e) {
+      if (btn.disabled) return;
+      e.preventDefault();
+      start = Date.now(); tick();
+      timer = setTimeout(function () { stop(); send("K"); }, 1500);
+    });
+    ["pointerup", "pointerleave", "pointercancel"].forEach(function (n) { btn.addEventListener(n, stop); });
+    btn.addEventListener("keydown", function (e) {   // 键盘：按住回车或空格同样生效
+      if ((e.key === "Enter" || e.key === " ") && !timer && !btn.disabled) { e.preventDefault(); start = Date.now(); tick(); timer = setTimeout(function () { stop(); send("K"); }, 1500); }
+    });
+    btn.addEventListener("keyup", stop);
+  })();
+
+  // 页签
+  function showTab(which) {
+    var driver = which === "driver";
+    $("tabDriver").setAttribute("aria-selected", driver);
+    $("tabKeeper").setAttribute("aria-selected", !driver);
+    $("pageDriver").hidden = !driver;
+    $("pageKeeper").hidden = driver;
+    try { localStorage.setItem("dockTab", which); } catch (e) {}
+    render();
+  }
+  $("tabDriver").addEventListener("click", function () { showTab("driver"); });
+  $("tabKeeper").addEventListener("click", function () { showTab("keeper"); });
+  document.querySelector("details").addEventListener("toggle", function () { $("raw").textContent = rawLines.join("\n"); });
+
+  /* ---------- 蓝牙（HC-08：服务 FFE0，特征 FFE1） ---------- */
+  function setConn(s, text) { $("conn").setAttribute("data-s", s); $("connText").textContent = text; }
+
+  $("btnConn").addEventListener("click", function () {
+    if (mode === "ble") { disconnect(); return; }
+    if (!navigator.bluetooth) {
+      $("note").hidden = false;
+      $("note").textContent = "这个浏览器不支持网页蓝牙。安卓手机请用 Chrome 打开这个网页的独立版本，苹果手机请用 Bluefy 浏览器。当前继续显示演示数据。";
+      return;
+    }
+    navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: [0xffe0] })
+      .then(function (dev) {
+        ble.device = dev;
+        dev.addEventListener("gattserverdisconnected", function () { if (mode === "ble") { setConn("off", "已断开"); addEvent(-2, 0); } });
+        setConn("demo", "连接中…");
+        return dev.gatt.connect();
+      })
+      .then(function (server) { return server.getPrimaryService(0xffe0); })
+      .then(function (svc) { return svc.getCharacteristic(0xffe1); })
+      .then(function (ch) {
+        ble.ch = ch;
+        ch.addEventListener("characteristicvaluechanged", function (ev) {
+          ble.buf += new TextDecoder().decode(ev.target.value);
+          var parts = ble.buf.split("\n");
+          ble.buf = parts.pop();
+          parts.forEach(handleLine);
+        });
+        return ch.startNotifications();
+      })
+      .then(function () {
+        Sim.stop();
+        mode = "ble";
+        S = { stage: 0, dist: null, people: 0, edge: 0, weight: 0, bill: 0, drift: 0, elapsed: 0, alarm: 0, truck: 0 };
+        events = []; records = []; addEvent(0, 0); $("recs").innerHTML = ""; $("recEmpty").hidden = false;
+        setConn("on", "已连接 " + (ble.device.name || "HC-08"));
+        $("btnConn").textContent = "断开";
+        $("note").hidden = true;
+        render();
+      })
+      .catch(function (e) {
+        if (e && e.name === "NotFoundError") return;   // 用户取消了选择
+        $("note").hidden = false;
+        $("note").textContent = "连接失败：" + (e && e.message ? e.message : e) + "。检查 HC-08 是否通电、手机蓝牙是否打开。";
+        setConn("demo", "演示中");
+      });
+  });
+
+  function disconnect() {
+    try { if (ble.device && ble.device.gatt.connected) ble.device.gatt.disconnect(); } catch (e) {}
+    ble.ch = null; mode = "demo";
+    setConn("demo", "演示中");
+    $("btnConn").textContent = "连接蓝牙";
+    $("note").hidden = false;
+    $("note").textContent = "已断开蓝牙，现在显示的是演示数据。";
+    Sim.start();
+  }
+
+  /* ---------- 演示：模拟一辆车的完整作业（逻辑和单片机 dock_logic.c 一致） ---------- */
+  var Sim = (function () {
+    var LOOP = 46;           // 一轮 46 秒
+    var s, timer = null, lastS = 0;
+
+    function reset() {
+      s = { t: 0, stage: 0, dist: null, people: 0, edge: 0, scale: 0, tare: 0, bill: 0, lockDist: 0, alarm: 0,
+            truck: s ? s.truck : 0, tArrive: 0, tLock: 0, tRel: 0, parked: false, awayT: -1, inCnt: 0, outCnt: 0, anomalies: 0,
+            fired: {} };
+    }
+    function emit(line) { handleLine(line); }
+    function reasons() {
+      var r = 0;
+      if (s.people > 0) r |= AL.PEOPLE;
+      if (s.edge) r |= AL.EDGE;
+      if (s.alarm & AL.DRIFT) r |= AL.DRIFT;
+      if (s.dist == null) r |= AL.NOREAD;
+      return r;
+    }
+    function unloaded() { return s.stage >= 2 ? s.scale - s.tare : 0; }
+    function release(diff, reviewed) {
+      s.stage = 4; s.tRel = s.t; s.alarm = 0; s.truck++; s.awayT = -1;
+      emit("E," + (reviewed ? 9 : 10) + "," + (reviewed ? diff : s.truck));
+      emit("R," + s.truck + "," + Math.floor(s.t - s.tLock) + "," + s.inCnt + "," + s.outCnt + "," + diff + "," + s.anomalies);
+    }
+    function command(c) {
+      var parts = c.split(","), k = parts[0], arg = +parts[1] || 0;
+      var z = zoneOf(s.dist);
+      var codes = { P: 1, L: 2, D: 3, K: 4 };
+      if (s.stage === 1 && k === "P") {
+        if (z === "dock") { s.parked = true; s.bill = arg; emit("E,3," + arg); } else emit("E,12,1");
+      } else if (s.stage === 1 && k === "L") {
+        if (z !== "dock" || !s.parked) emit("E,12,2");
+        else { s.stage = 2; s.lockDist = s.dist; s.tLock = s.t; s.tare = s.scale; s.alarm = 0; emit("E,4," + s.dist); }
+      } else if ((s.stage === 2 || s.stage === 3) && k === "D") {
+        var r = reasons();
+        if (r) { emit("E,7," + r); return; }
+        var diff = unloaded() - s.bill;
+        if (Math.abs(diff) > tol(s.bill)) { s.stage = 3; s.alarm |= AL.WEIGHT; s.anomalies |= AL.WEIGHT; emit("E,8," + diff); }
+        else release(diff, false);
+      } else if (s.stage === 3 && k === "K") {
+        var r2 = reasons();
+        if (r2) emit("E,7," + r2); else release(unloaded() - s.bill, true);
+      } else {
+        emit("E,12," + (codes[k] || 0));
+      }
+    }
+
+    // 场景：车倒进来 -> 确认 -> 锁定 -> 两人进车厢卸货 -> 中途溜车 -> 还有人时按完成被拒 -> 重量偏少 -> 复核放行 -> 离开
+    function world() {
+      var t = s.t;
+      if (s.stage === 4 && s.t - s.tRel > 2) {
+        var d = 70 + (s.t - s.tRel - 2) * 320;           // 放行 2 秒后开走
+        s.dist = d > 1400 ? null : Math.round(d);
+      } else if (t < 2) s.dist = null;
+      else if (t < 9.3) s.dist = Math.round(Math.max(70, 980 - (t - 2) * 125));
+      else if (s.stage === 2 && t >= 20 && t < 23) s.dist = 97;  // 溜车
+      else if (s.stage >= 2 || t >= 9.3) s.dist = s.stage === 0 && t > 9.3 ? null : 70 + (t % 1 < .5 ? 0 : 1);
+
+      function once(key, at, fn) { if (t >= at && !s.fired[key]) { s.fired[key] = 1; fn(); } }
+      if (s.stage >= 2) {
+        once("in1", 14, function () { s.people++; s.inCnt++; });
+        once("in2", 15.2, function () { s.people++; s.inCnt++; });
+        [16, 17.4, 18.8, 21.5, 22.9, 24.3, 25.7, 27.1].forEach(function (at, i) {
+          once("box" + i, at, function () { s.scale += 1400; });
+        });
+        once("out1", 27.8, function () { s.people--; s.outCnt++; });
+        once("out2", 30.2, function () { s.people--; s.outCnt++; });
+      }
+      s.edge = t >= 24 && t < 25.5 ? 1 : 0;
+
+      once("P", 10.5, function () { command("P,12000"); logRaw("out", "P,12000（演示自动操作）"); });
+      once("L", 12.5, function () { command("L"); logRaw("out", "L（演示自动操作）"); });
+      once("D1", 29, function () { command("D"); logRaw("out", "D（演示自动操作）"); });
+      once("D2", 32, function () { command("D"); logRaw("out", "D（演示自动操作）"); });
+      once("K", 35.5, function () { command("K"); logRaw("out", "K（演示自动操作）"); });
+    }
+
+    function logic() {
+      var z = zoneOf(s.dist);
+      if (s.stage === 0) {
+        if (s.dist != null && s.dist < CFG.detect && s.t < 30) { s.stage = 1; s.tArrive = s.t; s.parked = false; s.inCnt = s.outCnt = 0; s.anomalies = 0; s.fired.dock = 0; emit("E,1," + s.dist); }
+      } else if (s.stage === 1) {
+        if (z === "dock" && !s.fired.dock) { s.fired.dock = 1; emit("E,2," + s.dist); }
+      } else if (s.stage === 2 || s.stage === 3) {
+        var dr = s.dist == null ? 0 : Math.abs(s.dist - s.lockDist);
+        if (!(s.alarm & AL.DRIFT) && dr > CFG.driftAlarm) { s.alarm |= AL.DRIFT; s.anomalies |= AL.DRIFT; emit("E,5," + dr); }
+        else if ((s.alarm & AL.DRIFT) && dr <= CFG.driftClear) { s.alarm &= ~AL.DRIFT; emit("E,6," + dr); }
+      } else if (s.stage === 4) {
+        if (s.dist == null || s.dist >= CFG.detect) {
+          if (s.awayT < 0) s.awayT = s.t;
+          else if (s.t - s.awayT >= CFG.leaveMs / 1000) { s.stage = 0; emit("E,11,0"); }
+        } else s.awayT = -1;
+      }
+    }
+
+    function status() {
+      var el = s.stage === 1 ? s.t - s.tArrive : (s.stage === 2 || s.stage === 3) ? s.t - s.tLock : s.stage === 4 ? s.tRel - s.tLock : 0;
+      var drift = (s.stage === 2 || s.stage === 3) && s.dist != null ? Math.abs(s.dist - s.lockDist) : 0;
+      emit(["S", s.stage, s.dist == null ? 65535 : s.dist, s.people, s.edge, unloaded(), s.bill, drift, Math.floor(el), s.alarm, s.truck].join(","));
+    }
+
+    function step() {
+      s.t = Math.round((s.t + 0.1) * 10) / 10;
+      if (s.t >= LOOP) { reset(); }
+      world();
+      logic();
+      if (s.t - lastS >= 0.2 || s.t < lastS) { lastS = s.t; status(); }
+    }
+
+    return {
+      start: function () {
+        reset(); lastS = 0;
+        // 从卸货进行中的时刻开始显示，打开网页就能看到有内容的画面
+        for (var i = 0; i < 245; i++) step();
+        if (!timer) timer = setInterval(step, 100);
+      },
+      stop: function () { clearInterval(timer); timer = null; },
+      command: command
+    };
+  })();
+
+  /* ---------- 启动 ---------- */
+  var savedTab = "driver";
+  try { savedTab = localStorage.getItem("dockTab") || "driver"; } catch (e) {}
+  showTab(savedTab === "keeper" ? "keeper" : "driver");
+  Sim.start();
+  window.addEventListener("resize", render);
+})();
+</script>
+
+</body>
+</html>
